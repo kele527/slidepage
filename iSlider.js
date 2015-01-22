@@ -1,13 +1,14 @@
 
 
+
 /**
  * 通用全屏滑动切换动画组件
- * @method slidepage.init
+ * @method iSlider.init
  * @param {string} 
  * @return 
  * @example
 
-    slidepage.init({
+    iSlider.init({
         container:'#demo1',
         onSlide:function () {
             console.info(this.index)
@@ -41,7 +42,9 @@ function extend(a,b) {
     return a;
 }
 
-var slidepage = {
+var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame || function (cb) {cb()};
+
+var iSlider = {
     opts:{
         speed:400,
         isVertical:true,
@@ -54,6 +57,7 @@ var slidepage = {
     tplNum:0,
     tpl:[],
     index : 0,
+
     $:function (o) {
         return document.querySelector(o);
     },
@@ -105,7 +109,7 @@ var slidepage = {
 	},
     pageInit:function () {
         var self = this;
-        this.wrap.innerHTML='<div id="current" class="item '+this.tpl[0].className+'" style="-webkit-transform:translate3d(0,0,0)">'+this.tpl[0].innerHTML+'</div><div id="next" class="item item-1" style="-webkit-transform:translate3d('+this.getDist('100%')+')">'+this.tpl[1].innerHTML+'</div>';
+        this.wrap.innerHTML='<div id="current" class="item '+this.tpl[0].className+'" style="-webkit-transform:translate(0,0)">'+this.tpl[0].innerHTML+'</div><div id="next" class="item item-1" style="-webkit-transform:translate('+this.getDist('100%')+')">'+this.tpl[1].innerHTML+'</div>';
 
         setTimeout(function () {
             self.$('#current').className+=' play'
@@ -125,6 +129,7 @@ var slidepage = {
 		if (this.hasNext) {
 			this.$('#next').style.cssText+='-webkit-transition-duration:0;'
 		}
+
 		this.$('#current').style.cssText+='-webkit-transition-duration:0;'
 		if (this.hasPrev) {
 			this.$('#prev').style.cssText+='-webkit-transition-duration:0;'
@@ -137,7 +142,7 @@ var slidepage = {
 		this.deltaX2 = currentX - this.deltaX1;//记录当次移动的偏移量
 		this.totalDist = this.startPos + currentX - this.touchInitPos;
 
-		this.$('#current').style.WebkitTransform='translate3d('+this.getDist(this.totalDist+'px')+')';
+		this.$('#current').style.WebkitTransform='translate('+this.getDist(this.totalDist+'px')+')';
 		this.startPos = this.totalDist;
 		
 		//处理上一张和下一张
@@ -145,14 +150,14 @@ var slidepage = {
 			if (this.hasNext) {
 				this.totalDist2 = this.startPosNext + currentX - this.touchInitPos;
 
-				this.$('#next').style.WebkitTransform='translate3d('+this.getDist(this.totalDist2+'px')+')';
+				this.$('#next').style.WebkitTransform='translate('+this.getDist(this.totalDist2+'px')+')';
 				this.startPosNext = this.totalDist2;
 			}
 		}else {//露出上一张
 			if (this.hasPrev) {
 				this.totalDist2 = this.startPosPrev + currentX - this.touchInitPos;
 
-				this.$('#prev').style.WebkitTransform='translate3d('+this.getDist(this.totalDist2+'px')+')';
+				this.$('#prev').style.WebkitTransform='translate('+this.getDist(this.totalDist2+'px')+')';
 				this.startPosPrev = this.totalDist2;
 			}
 		}
@@ -160,30 +165,36 @@ var slidepage = {
 		this.touchInitPos = currentX;
 	},
 	touchend : function (e) {
-		if(this.deltaX2<-15){
+
+		if(this.deltaX2<-50){
 			this.next();
-		}else if(this.deltaX2 > 15){
+		}else if(this.deltaX2 > 50){
 			this.prev();
 		}else{
 			this.itemReset();
 		}
 		this.deltaX2 = 0;
+
 	},
     getDist:function (dist) {
-        return (this.opts.isVertical? '0,'+dist : dist+',0')+',0' ;
+        return (this.opts.isVertical? '0,'+dist : dist+',0')+'' ;
     },
     itemReset:function () {
-        this.$('#current').style.cssText+='-webkit-transition-duration:'+this.opts.speed+'ms;-webkit-transform:translate3d(0,0,0)';
+        this.$('#current').style.cssText+='-webkit-transition-duration:'+this.opts.speed+'ms;-webkit-transform:translate(0,0)';
         if (this.$('#prev')) {
-            this.$('#prev').style.cssText+='-webkit-transition-duration:'+this.opts.speed+'ms;-webkit-transform:translate3d('+this.getDist('-'+this.scrollDist+'px')+')';
+            this.$('#prev').style.cssText+='-webkit-transition-duration:'+this.opts.speed+'ms;-webkit-transform:translate('+this.getDist('-'+this.scrollDist+'px')+')';
         }
         if (this.$('#next')) {
-           this.$('#next').style.cssText+='-webkit-transition-duration:'+this.opts.speed+'ms;-webkit-transform:translate3d('+this.getDist(this.scrollDist+'px')+')';
+           this.$('#next').style.cssText+='-webkit-transition-duration:'+this.opts.speed+'ms;-webkit-transform:translate('+this.getDist(this.scrollDist+'px')+')';
         }
 		this.deltaX2 = 0;
     },
 
     prev:function () {
+        if (!this.$('#current') || !this.$('#prev')) {
+            this.itemReset();
+            return ;
+        }
         var self = this;
         if (this.index > 0) {
             this.index--;
@@ -194,42 +205,48 @@ var slidepage = {
 
         var nextIndex = this.index+1 > this.tplNum-1 ? 0 : this.index+1;
 
-        this.$('#current').style.cssText+='-webkit-transition-duration:'+this.opts.speed+'ms;-webkit-transform:translate3d('+this.getDist(this.scrollDist+'px')+')';
         if (this.$('#next')) {
             this.wrap.removeChild(this.$('#next'));
         }
         this.$('#current').id='next';
-        this.$('#prev').style.cssText+='-webkit-transition-duration:'+this.opts.speed+'ms;-webkit-transform:translate3d(0,0,0)';
         this.$('#prev').id='current';
+        this.$('#next').style.cssText+='-webkit-transition-duration:'+this.opts.speed+'ms;-webkit-transform:translate('+this.getDist(this.scrollDist+'px')+')';
+        this.$('#current').style.cssText+='-webkit-transition-duration:'+this.opts.speed+'ms;-webkit-transform:translate(0,0)';
 
         setTimeout(function () {
-            self.$('#current').innerHTML=self.tpl[self.index].innerHTML;
-            if (self.$('.play')) {
-                self.$('.play').className=self.$('.play').className.replace(/\s*\bplay\b/g,'');
-            }
-            self.$('#current').className +=' play';
-        },400)
+            requestAnimationFrame(function () {
+                if (self.$('.play')) {
+                    self.$('.play').className=self.$('.play').className.replace(/\s*\bplay\b/g,'');
+                }
+                self.$('#current').className +=' play';
 
-        this.opts.onSlide.call(this);
 
-        var prevIndex = this.index-1;
-        if (prevIndex < 0) {
-            prevIndex =  this.tplNum-1;
-            return false;
-        }
+                self.opts.onSlide.call(self);
 
-        var addItem = document.createElement('div');
-        addItem.className='item item-'+prevIndex;
-        addItem.id='prev';
-        addItem.style.cssText+='-webkit-transition-duration:0ms;-webkit-transform:translate3d('+this.getDist('-'+this.scrollDist+'px')+')';
+                var prevIndex = self.index-1;
+                if (prevIndex < 0) {
+                    prevIndex =  self.tplNum-1;
+                    return false;
+                }
 
-        addItem.innerHTML=self.tpl[prevIndex].innerHTML;
+                var addItem = document.createElement('div');
+                addItem.className='item item-'+prevIndex;
+                addItem.id='prev';
+                addItem.style.cssText+='-webkit-transition-duration:0ms;-webkit-transform:translate('+self.getDist('-'+self.scrollDist+'px')+')';
 
-        this.wrap.insertBefore(addItem,this.$('#current'));
+                addItem.innerHTML=self.tpl[prevIndex].innerHTML;
+
+                self.wrap.insertBefore(addItem,self.$('#current'));
+            });
+        },200)
 
     },
 
     next:function () {
+        if (!this.$('#current') || !this.$('#next')) {
+            this.itemReset();
+            return ;
+        }
 
         var self = this;
         if (this.index < this.tplNum-1) {
@@ -242,38 +259,41 @@ var slidepage = {
 
         var prevIndex = this.index===0 ? this.tplNum-1 : this.index-1;
 
-        this.$('#current').style.cssText+='-webkit-transition-duration:'+this.opts.speed+'ms;-webkit-transform:translate3d('+this.getDist('-'+this.scrollDist+'px')+')';
         if (this.$('#prev')) {
             this.wrap.removeChild(this.$('#prev'));
         }
         this.$('#current').id='prev';
-        this.$('#next').style.cssText+='-webkit-transition-duration:'+this.opts.speed+'ms;-webkit-transform:translate3d(0,0,0)';
         this.$('#next').id='current';
-
-        window.t1=Date.now();
+        this.$('#prev').style.cssText+='-webkit-transition-duration:'+this.opts.speed+'ms;-webkit-transform:translate('+this.getDist('-'+this.scrollDist+'px')+')';
+        this.$('#current').style.cssText+='-webkit-transition-duration:'+this.opts.speed+'ms;-webkit-transform:translate(0,0)';
+       
 
         setTimeout(function () {
-            if (self.$('.play')) {
-                self.$('.play').className=self.$('.play').className.replace('play','');
-            }
-            self.$('#current').className +=' play';
+            requestAnimationFrame(function () {
+                if (self.$('.play')) {
+                    self.$('.play').className=self.$('.play').className.replace(/\s*\bplay\b/g,'');
+                }
+                self.$('#current').className +=' play';
 
-            self.opts.onSlide.call(self);
-            var nextIndex = self.index+1;
-            if (nextIndex >= self.tplNum) {
-        //        $('#arr').style.display='none';
-                return false;
-            }
 
-            var addItem = document.createElement('div');
-            addItem.className='item item-'+nextIndex;
-            addItem.id='next';
-            addItem.style.cssText+='-webkit-transition-duration:0ms;-webkit-transform:translate3d('+self.getDist(self.scrollDist+'px')+')';
-            addItem.innerHTML=self.tpl[nextIndex].innerHTML;
-            self.wrap.appendChild(addItem);
-        },this.opts.speed)
+                self.opts.onSlide.call(self);
 
-            log(Date.now()-t1)
+                var nextIndex = self.index+1;
+                if (nextIndex >= self.tplNum) {
+                    return false;
+                }
+
+                var addItem = document.createElement('div');
+                addItem.className='item item-'+nextIndex;
+                addItem.id='next';
+                addItem.style.cssText+='-webkit-transition-duration:0ms;-webkit-transform:translate('+self.getDist(self.scrollDist+'px')+')';
+                addItem.innerHTML=self.tpl[nextIndex].innerHTML;
+
+                self.wrap.appendChild(addItem);
+            })
+        },200)
+
+
     },
     loading:function () {
         var self = this;
@@ -291,9 +311,6 @@ var slidepage = {
                 loaded++;
                 if (this.src === imgurls[0] && e.type === 'load') {
                     clearTimeout(fallback)
-//                    ct_cover.init(this, function(cover) {
-//                        ct_cover.remove();
-//                    });
                 }
                 checkloaded();
             }
@@ -323,9 +340,10 @@ var slidepage = {
 }
 
 if (typeof module == 'object') {
-    module.exports=slidepage;
+    module.exports=iSlider;
 }else {
-    win.slidepage=slidepage;
+    win.iSlider=iSlider;
 }
 
 })(window);
+
